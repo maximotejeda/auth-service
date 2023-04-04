@@ -1,0 +1,22 @@
+FROM golang:1.20 as build
+
+WORKDIR /go/src/app
+
+COPY . .
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+RUN go mod download && go mod tidy
+ARG OS $OS
+ARG ARCH $ARCH
+ENV PLACE="auth-$(OS)-(ARCH)"
+RUN go build -gcflags="all=-N -l" -o /go/bin/auth/auth ./main/
+
+
+
+FROM gcr.io/distroless/cc-debian11
+COPY --from=build /go/bin/auth /
+COPY --from=build /go/bin/dlv /
+
+EXPOSE 4000
+EXPOSE 8083
+
+ENTRYPOINT ["/dlv", "--listen=:4000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/auth"]]
