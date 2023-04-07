@@ -11,8 +11,10 @@ import (
 )
 
 type JWT struct {
-	privateKey *rsa.PrivateKey
-	PublicKey  *rsa.PublicKey
+	privateKey    *rsa.PrivateKey
+	PublicKey     *rsa.PublicKey
+	privatePemStr string
+	publicPemStr  string
 }
 
 var (
@@ -40,6 +42,10 @@ func (j *JWT) Renew() {
 	priv, pub := MyGenerateKeys()
 	j.privateKey = priv
 	j.PublicKey = pub
+	// need to try to convert to string
+	j.privatePemStr = exportRSAPrivateKeyAsPemStr(priv)
+	j.publicPemStr, _ = exportRSAPublicKeyAsPemStr(pub)
+	fmt.Printf("\nPrivatekeyPem: %s\n\n PublicKeyPem: %s", j.privatePemStr, j.publicPemStr)
 }
 
 func (j *JWT) Create(ttl time.Duration, content interface{}) (token string, err error) {
