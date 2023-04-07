@@ -6,6 +6,7 @@ import (
 
 func main() {
 	router := r.NewRouter()
+
 	r.AuthAddRoutes(router)
 	r.UserAddRoutes(router)
 
