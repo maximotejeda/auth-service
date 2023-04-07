@@ -142,7 +142,7 @@ func getRecoverAccount(userID uint) (*RecoverAccount, error) {
 	//TODO recover account
 	var userRecovery *RecoverAccount = &RecoverAccount{}
 	if userID == 0 {
-		return nil, fmt.Errorf("need id to look for info", *userRecovery)
+		return nil, fmt.Errorf("need id to look for info: %v", *userRecovery)
 	}
 	tx := DB.Where("user_id = ?", userID).First(userRecovery)
 	return userRecovery, tx.Error
