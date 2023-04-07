@@ -1,4 +1,6 @@
-export DEV=true
+export DEV=1
+include .env
+export 
 OS:=${shell go env GOOS}
 ARCH=$(shell go env GOARCH)
 OOSS="linux"
@@ -8,18 +10,20 @@ DEBUG=1
 
 image:
 	docker build -t auth-service:latest --build-arg OS=$(OS) --build-arg ARCH=$(ARCH)  .
-run: image
-	@docker run -p 4000:4000 -p 8083:8083 auth-service:latest
+run-image: image
+	@docker run -p 4000:4000 -p 8083:8083 -v ./db:/db auth-service:latest
 
 image-debug:
 	docker build -f ./Dockerfile-debug -t auth-service:debug --build-arg OS=$(OS) --build-arg ARCH=$(ARCH)  .
 run-debug: image-debug
-	@docker run -p 4000:4000 -p 8083:8083 auth-service:debug
-	
-	
+	@docker run -p 4000:4000 -p 8083:8083 --env-file .env ./db:/db auth-service:debug
+
+run-local:build
+	@./bin/auth-$(OS)-$(ARCH)
 build: clean
 	@mkdir bin 
-	@CGO_ENABLED=1 go build -o bin/auth-$(OS)-$(ARCH) main/main.go
+	@mkdir db
+	@go build -o bin/auth-$(OS)-$(ARCH) ./main/
 
 test:
 	@go test ./...
