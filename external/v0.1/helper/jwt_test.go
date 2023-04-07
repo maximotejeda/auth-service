@@ -57,7 +57,7 @@ func TestJWTCreate(t *testing.T) {
 // test to Meter the time spent creating tokens aprox 1/ms
 // cant reduce allocations to improve performance
 func BenchmarkToken(b *testing.B) {
-	var jwt JWT
+	var jwt *JWT
 	b.Run("generate interface", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			jwt = NewJWT()

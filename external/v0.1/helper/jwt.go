@@ -12,19 +12,41 @@ import (
 
 type JWT struct {
 	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
+	PublicKey  *rsa.PublicKey
 }
 
-func NewJWT() JWT {
+var (
+	GlobalKeys *JWT = &JWT{}
+)
+
+func init() {
+	GlobalKeys.New()
+}
+
+func NewJWT() *JWT {
 	priv, pub := MyGenerateKeys()
-	return JWT{
+	return &JWT{
 		privateKey: priv,
-		publicKey:  pub,
+		PublicKey:  pub,
+	}
+}
+func (j *JWT) New() {
+	if j.privateKey == nil {
+		j.Renew()
 	}
 }
 
-func (j JWT) Create(ttl time.Duration, content interface{}) (token string, err error) {
+func (j *JWT) Renew() {
+	priv, pub := MyGenerateKeys()
+	j.privateKey = priv
+	j.PublicKey = pub
+}
 
+func (j *JWT) Create(ttl time.Duration, content interface{}) (token string, err error) {
+	if j == nil || j.privateKey == nil {
+		log.Print("nil struct pointer")
+		return "", fmt.Errorf("nil pointer struct %v", j)
+	}
 	now := time.Now().UTC()
 
 	claims := make(jwt.MapClaims)
@@ -44,13 +66,17 @@ func (j JWT) Create(ttl time.Duration, content interface{}) (token string, err e
 
 // Validate token in the algorithm used
 // working as expected
-func (j JWT) Validate(token string) (interface{}, error) {
-	fmt.Print(len(strings.Split(token, ".")))
+func (j *JWT) Validate(token string) (interface{}, error) {
+	if j == nil || j.privateKey == nil {
+		log.Print("nil struct pointer")
+		return nil, fmt.Errorf("nil pointer struct %v", j)
+	}
+
 	tok, err := jwt.Parse(token, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
 		}
-		return j.publicKey, nil
+		return j.PublicKey, nil
 	})
 
 	if err != nil {
@@ -63,4 +89,49 @@ func (j JWT) Validate(token string) (interface{}, error) {
 	}
 
 	return claims["dat"], nil
+}
+
+// RefreshToken: check header token validates it and check if is expired
+// if expiration date is less than x issue a new
+// Todo Set time for token and expiration timeout
+func (j *JWT) RefreshToken(tokenStr string) (string, error) {
+	_, err2 := j.Validate(tokenStr)
+	switch {
+	case err2 != nil && strings.Contains(err2.Error(), "Token is expired"):
+		token, err1 := jwt.Parse(tokenStr, nil)
+		if token == nil {
+			return "", err1
+		}
+		claims, _ := token.Claims.(jwt.MapClaims)
+		// When the token expired?
+		exp := claims["exp"]
+		var expNum int64
+		switch t := exp.(type) {
+		case int:
+			expNum = int64(t)
+		case int64:
+			expNum = t
+		case float64:
+			expNum = int64(t)
+		default:
+			fmt.Printf("The value is %v", t)
+		}
+
+		now := time.Now().Unix()
+		if (now-expNum) <= 60 && (now-expNum) > 0 {
+			//TODO modify the durarions
+			newToken, err := j.Create(time.Second*30, claims["dat"])
+			if err != nil {
+				return "", err
+			} else {
+				return newToken, err
+			}
+		} else {
+			return "", fmt.Errorf("need new token session expired long")
+		}
+	case err2 != nil && !strings.Contains(err2.Error(), "Token is expired"):
+		return "", err2
+	}
+
+	return tokenStr, nil
 }
