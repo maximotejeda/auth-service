@@ -12,3 +12,19 @@ func AdminAddRoutes(r *gin.Engine) {
 		admin.GET("/ban", nil)
 	}
 }
+
+func listUsers(c *gin.Context) {
+	//TODO
+}
+
+func initiateUserRecovery(c *gin.Context) {
+	//TODO
+}
+
+func externalAccountRegister(c *gin.Context) {
+	//TODO
+}
+
+func disableAccount(c *gin.Context) {
+	//TODO
+}
