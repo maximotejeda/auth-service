@@ -1,7 +1,11 @@
 package router
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
+	db "github.com/maximotejeda/auth-service/external/v0.1/database"
 	"github.com/maximotejeda/auth-service/external/v0.1/helper"
 )
 
@@ -12,26 +16,79 @@ func AdminAddRoutes(r *gin.Engine) {
 	validated.Use(helper.Validated())
 	validated.Use(helper.IsAdmin())
 	{
-		validated.GET("/users", nil)
-		validated.GET("/recover", nil)
-		validated.POST("/validate", nil)
-		validated.POST("/register", nil)
-		validated.POST("/ban", nil)
+		validated.GET("/users", adminListUsers)
+		validated.GET("/recover", adminInitiateUserRecovery)
+		validated.POST("/activate", adminActivateAccount)
+		validated.POST("/register", adminExternalAccountRegister)
+		validated.POST("/ban", adminDisableAccount)
 	}
 }
 
-func listUsers(c *gin.Context) {
+func adminListUsers(c *gin.Context) {
 	//TODO
+	users, err := db.AdminGetUsers()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{"users": users})
 }
 
-func initiateUserRecovery(c *gin.Context) {
+func adminInitiateUserRecovery(c *gin.Context) {
 	//TODO
+	data := c.Query("data")
+	if data == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "account information needed"})
+		return
+	}
+	db.NewRecoverAccount(data)
+	c.JSON(http.StatusCreated, gin.H{"status": "if data exist an email will be sent in the next 10 minutes"})
 }
 
-func externalAccountRegister(c *gin.Context) {
+func adminExternalAccountRegister(c *gin.Context) {
 	//TODO
+	input := db.Register{}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// User active or inactive for default
+	user := db.User{Active: true, UserLogin: input.UserLogin, UserInfo: input.UserInfo}
+	err := db.CreateAccount(&user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"status": "created"})
 }
 
-func disableAccount(c *gin.Context) {
-	//TODO
+func adminDisableAccount(c *gin.Context) {
+	//Can be username or email
+	data := c.Query("data")
+	if data == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "account information needed"})
+		return
+	}
+	err := db.AdminBanUser(data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"status": data + " Banned"})
+}
+
+func adminActivateAccount(c *gin.Context) {
+	data := c.Query("data")
+	if data == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "account information needed"})
+		return
+	}
+	user := db.User{}
+	if strings.Contains(data, "@") {
+		user.Email = data
+	} else {
+		user.Username = data
+	}
+	db.ActivateAccount(&user)
+	c.JSON(http.StatusCreated, gin.H{"status": data + " activated"})
 }
