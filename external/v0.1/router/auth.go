@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximotejeda/auth-service/external/v0.1/database"
@@ -62,7 +62,7 @@ func login(c *gin.Context) {
 	toClaims.UserInfo.FirstName = user.UserInfo.FirstName
 	toClaims.UserInfo.LastName = user.UserInfo.LastName
 
-	s, err := j.Create(time.Second*30, toClaims)
+	s, err := j.Create(toClaims)
 
 	if err != nil {
 		log.Print("Create token: ", err.Error())
@@ -127,13 +127,14 @@ func refresh(c *gin.Context) {
 // ALL fields are mandatory, username, password, email, firstname, lastname
 // on create active actual false
 func register(c *gin.Context) {
-
+	defaultActive := os.Getenv("DEFAULTACTIVEUSER")
 	input := database.Register{}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	user := database.User{Active: false, UserLogin: input.UserLogin, UserInfo: input.UserInfo}
+	// User active or inactive for default
+	user := database.User{Active: defaultActive != "", UserLogin: input.UserLogin, UserInfo: input.UserInfo}
 	err := database.CreateAccount(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -142,7 +143,7 @@ func register(c *gin.Context) {
 
 	//TODO create a email verification token sender
 	// to finish activating account
-	token, err := J.Create(60*time.Second, user)
+	token, err := J.Create(user)
 	fmt.Println(token)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
