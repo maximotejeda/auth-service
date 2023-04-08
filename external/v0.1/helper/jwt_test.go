@@ -3,7 +3,6 @@ package helper
 import (
 	"strings"
 	"testing"
-	"time"
 )
 
 // Test to Validate and create JWT
@@ -25,7 +24,7 @@ func TestJWTCreate(t *testing.T) {
 	jwt := NewJWT()
 	for _, v := range testInput {
 		t.Run("Create token", func(t *testing.T) {
-			token, err = jwt.Create(time.Second*20, v)
+			token, err = jwt.Create(v)
 			if err != nil {
 				t.Errorf("error creating token: %v", err)
 			}
@@ -66,7 +65,7 @@ func BenchmarkToken(b *testing.B) {
 	b.ResetTimer()
 	b.Run("Create Token", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			jwt.Create(time.Second*3, nil)
+			jwt.Create(nil)
 		}
 	})
 

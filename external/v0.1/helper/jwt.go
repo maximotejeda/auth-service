@@ -2,8 +2,12 @@ package helper
 
 import (
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,11 +22,31 @@ type JWT struct {
 }
 
 var (
-	GlobalKeys *JWT = &JWT{}
+	GlobalKeys    *JWT = &JWT{}
+	actualDir, _       = os.Getwd()
+	keys               = os.Getenv("KEYSDIR")
+	priv               = os.Getenv("PRIVATEKEYNAME")
+	pub                = os.Getenv("PUBLICKEYNAME")
+	privateKeyDir      = path.Join(actualDir, keys, priv)
+	publicKeyDir       = path.Join(actualDir, keys, pub)
+	tokenTTL           = os.Getenv("TOKENTTLS")
 )
 
+// Init Check if theres other keys created
+// if others keys exists dont recreate them just copy them and use the context
 func init() {
-	GlobalKeys.New()
+	_, err := os.Lstat(privateKeyDir)
+
+	if errors.Is(err, os.ErrNotExist) {
+		// this means the keys are not writed to disk so ill create them
+		fmt.Println("\nKeys does not exist writing them", err)
+		GlobalKeys.New() // write to disk on first run
+	} else if err == nil {
+		GlobalKeys.readFromDisk() // read keys if other instance is running
+
+		// TODO priodically check if keys changed
+		// im planning on changing keys each day or half a day
+	}
 }
 
 func NewJWT() *JWT {
@@ -38,6 +62,7 @@ func (j *JWT) New() {
 	}
 }
 
+// rotate the keys creating new keys in case of existence
 func (j *JWT) Renew() {
 	priv, pub := MyGenerateKeys()
 	j.privateKey = priv
@@ -45,22 +70,69 @@ func (j *JWT) Renew() {
 	// need to try to convert to string
 	j.privatePemStr = exportRSAPrivateKeyAsPemStr(priv)
 	j.publicPemStr, _ = exportRSAPublicKeyAsPemStr(pub)
-	fmt.Printf("\nPrivatekeyPem: %s\n\n PublicKeyPem: %s", j.privatePemStr, j.publicPemStr)
+	j.writeToDisk()
+	//fmt.Printf("\nPrivatekeyPem: %s\n\n PublicKeyPem: %s", j.privatePemStr, j.publicPemStr)
 }
 
-func (j *JWT) Create(ttl time.Duration, content interface{}) (token string, err error) {
+// every time new keys are issued write them to disk overwriting the actuals
+func (j *JWT) writeToDisk() {
+	err := os.Mkdir("keys", 0770)
+	if err != nil {
+		fmt.Printf("\n%v\n", err)
+	}
+
+	err = os.WriteFile(publicKeyDir, []byte(GlobalKeys.publicPemStr), 0644)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+	err = os.WriteFile(privateKeyDir, []byte(GlobalKeys.privatePemStr), 0644)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+}
+
+func (j *JWT) readFromDisk() {
+	privateBytes, err := os.ReadFile(privateKeyDir)
+	if err != nil {
+		panic(err)
+	}
+	publicBytes, err := os.ReadFile(publicKeyDir)
+	if err != nil {
+		panic(err)
+	}
+	// assig string to J
+	// mostly i intend to use keys as a way of replicate the service throug multiples pods
+	// share the same keys with multiples pods if needed to replicate
+	GlobalKeys.privatePemStr = string(privateBytes)
+	GlobalKeys.publicPemStr = string(publicBytes)
+	GlobalKeys.privateKey, err = parsePrivateKeyFromPemStr(GlobalKeys.privatePemStr)
+	if err != nil {
+		panic(err)
+	}
+	GlobalKeys.PublicKey, err = ParsePublicKeyFromPemStr(GlobalKeys.publicPemStr)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (j *JWT) Create(content interface{}) (token string, err error) {
 	if j == nil || j.privateKey == nil {
 		log.Print("nil struct pointer")
 		return "", fmt.Errorf("nil pointer struct %v", j)
 	}
+	tokenTimeToLiveInt, err := strconv.Atoi(tokenTTL)
+	if err != nil {
+		tokenTimeToLiveInt = 900
+	}
+	tokenTimeToLive := time.Second * time.Duration(tokenTimeToLiveInt)
 	now := time.Now().UTC()
 
 	claims := make(jwt.MapClaims)
 
-	claims["dat"] = content             // Data we expect to have on JWT
-	claims["exp"] = now.Add(ttl).Unix() // Expiration time after which the token ios invalid
-	claims["iat"] = now.Unix()          // The time at wwhen the token was issued
-	claims["nbf"] = now.Unix()          // The time before which the token must be disregarded.
+	claims["dat"] = content                         // Data we expect to have on JWT
+	claims["exp"] = now.Add(tokenTimeToLive).Unix() // Expiration time after which the token ios invalid
+	claims["iat"] = now.Unix()                      // The time at wwhen the token was issued
+	claims["nbf"] = now.Unix()                      // The time before which the token must be disregarded.
 
 	token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(j.privateKey)
 	if err != nil {
@@ -126,7 +198,7 @@ func (j *JWT) RefreshToken(tokenStr string) (string, error) {
 		now := time.Now().Unix()
 		if (now-expNum) <= 60 && (now-expNum) > 0 {
 			//TODO modify the durarions
-			newToken, err := j.Create(time.Second*30, claims["dat"])
+			newToken, err := j.Create(claims["dat"])
 			if err != nil {
 				return "", err
 			} else {
