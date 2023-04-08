@@ -15,8 +15,8 @@ func AdminAddRoutes(r *gin.Engine) {
 		validated.GET("/users", nil)
 		validated.GET("/recover", nil)
 		validated.POST("/validate", nil)
-		validated.GET("/register", nil)
-		validated.GET("/ban", nil)
+		validated.POST("/register", nil)
+		validated.POST("/ban", nil)
 	}
 }
 
