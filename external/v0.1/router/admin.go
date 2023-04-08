@@ -8,9 +8,6 @@ import (
 func AdminAddRoutes(r *gin.Engine) {
 	v01 := r.Group("/v0.1")
 	admin := v01.Group("/admin")
-	{
-		admin.POST("/login", nil)
-	}
 	validated := admin.Group("/")
 	validated.Use(helper.Validated())
 	validated.Use(helper.IsAdmin())
