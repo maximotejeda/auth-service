@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	//"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,5 +25,27 @@ func Validated() gin.HandlerFunc {
 		} else {
 			c.Next()
 		}
+	}
+}
+
+// Function to verify rol of a user and  give auth to certasins functions
+func IsAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenstr := c.GetHeader("Authorization")
+		s := strings.Replace(tokenstr, "Bearer ", "", 1)
+		params, err := GlobalKeys.Validate(s)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"err": err.Error()})
+			c.Abort()
+			return
+		}
+		rol := params["rol"]
+		rol, _ = rol.(string)
+		if rol != "admin" {
+			c.JSON(http.StatusUnauthorized, gin.H{"err": "Only admin allowed here"})
+			c.Abort()
+			return
+		}
+		c.Next()
 	}
 }
