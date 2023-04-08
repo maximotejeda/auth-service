@@ -17,9 +17,9 @@ import (
 
 type JWT struct {
 	privateKey    *rsa.PrivateKey
-	PublicKey     *rsa.PublicKey
+	publicKey     *rsa.PublicKey
 	privatePemStr string
-	publicPemStr  string
+	PublicPemStr  string
 }
 
 var (
@@ -54,7 +54,7 @@ func NewJWT() *JWT {
 	priv, pub := MyGenerateKeys()
 	return &JWT{
 		privateKey: priv,
-		PublicKey:  pub,
+		publicKey:  pub,
 	}
 }
 func (j *JWT) New() {
@@ -67,10 +67,10 @@ func (j *JWT) New() {
 func (j *JWT) Renew() {
 	priv, pub := MyGenerateKeys()
 	j.privateKey = priv
-	j.PublicKey = pub
+	j.publicKey = pub
 	// need to try to convert to string
 	j.privatePemStr = exportRSAPrivateKeyAsPemStr(priv)
-	j.publicPemStr, _ = exportRSAPublicKeyAsPemStr(pub)
+	j.PublicPemStr, _ = exportRSAPublicKeyAsPemStr(pub)
 	j.writeToDisk()
 	//fmt.Printf("\nPrivatekeyPem: %s\n\n PublicKeyPem: %s", j.privatePemStr, j.publicPemStr)
 }
@@ -82,7 +82,7 @@ func (j *JWT) writeToDisk() {
 		fmt.Printf("\n%v\n", err)
 	}
 
-	err = os.WriteFile(publicKeyDir, []byte(GlobalKeys.publicPemStr), 0644)
+	err = os.WriteFile(publicKeyDir, []byte(GlobalKeys.PublicPemStr), 0644)
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
@@ -105,12 +105,12 @@ func (j *JWT) readFromDisk() {
 	// mostly i intend to use keys as a way of replicate the service throug multiples pods
 	// share the same keys with multiples pods if needed to replicate
 	GlobalKeys.privatePemStr = string(privateBytes)
-	GlobalKeys.publicPemStr = string(publicBytes)
+	GlobalKeys.PublicPemStr = string(publicBytes)
 	GlobalKeys.privateKey, err = parsePrivateKeyFromPemStr(GlobalKeys.privatePemStr)
 	if err != nil {
 		panic(err)
 	}
-	GlobalKeys.PublicKey, err = ParsePublicKeyFromPemStr(GlobalKeys.publicPemStr)
+	GlobalKeys.publicKey, err = ParsePublicKeyFromPemStr(GlobalKeys.PublicPemStr)
 	if err != nil {
 		panic(err)
 	}
@@ -145,6 +145,7 @@ func (j *JWT) Create(content interface{}) (token string, err error) {
 
 // Validate token in the algorithm used
 // working as expected
+// return claims["dat"]
 func (j *JWT) Validate(token string) (map[string]interface{}, error) {
 	if j == nil || j.privateKey == nil {
 		log.Print("nil struct pointer")
@@ -155,7 +156,7 @@ func (j *JWT) Validate(token string) (map[string]interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
 		}
-		return j.PublicKey, nil
+		return j.publicKey, nil
 	})
 
 	if err != nil {
