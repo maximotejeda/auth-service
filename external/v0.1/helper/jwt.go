@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	//"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JWT struct {
@@ -144,7 +145,7 @@ func (j *JWT) Create(content interface{}) (token string, err error) {
 
 // Validate token in the algorithm used
 // working as expected
-func (j *JWT) Validate(token string) (interface{}, error) {
+func (j *JWT) Validate(token string) (map[string]interface{}, error) {
 	if j == nil || j.privateKey == nil {
 		log.Print("nil struct pointer")
 		return nil, fmt.Errorf("nil pointer struct %v", j)
@@ -165,8 +166,11 @@ func (j *JWT) Validate(token string) (interface{}, error) {
 	if !ok || !tok.Valid {
 		return nil, fmt.Errorf("validate: invalid")
 	}
-
-	return claims["dat"], nil
+	dat, ok := claims["dat"].(map[string]interface{})
+	if !ok {
+		return map[string]interface{}{}, nil
+	}
+	return dat, nil
 }
 
 // RefreshToken: check header token validates it and check if is expired
@@ -174,8 +178,10 @@ func (j *JWT) Validate(token string) (interface{}, error) {
 // Todo Set time for token and expiration timeout
 func (j *JWT) RefreshToken(tokenStr string) (string, error) {
 	_, err2 := j.Validate(tokenStr)
+	var expNum int64
 	switch {
-	case err2 != nil && strings.Contains(err2.Error(), "Token is expired"):
+
+	case err2 != nil && errors.Is(err2, jwt.ErrTokenExpired):
 		token, err1 := jwt.Parse(tokenStr, nil)
 		if token == nil {
 			return "", err1
@@ -183,7 +189,6 @@ func (j *JWT) RefreshToken(tokenStr string) (string, error) {
 		claims, _ := token.Claims.(jwt.MapClaims)
 		// When the token expired?
 		exp := claims["exp"]
-		var expNum int64
 		switch t := exp.(type) {
 		case int:
 			expNum = int64(t)
@@ -196,7 +201,11 @@ func (j *JWT) RefreshToken(tokenStr string) (string, error) {
 		}
 
 		now := time.Now().Unix()
-		if (now-expNum) <= 60 && (now-expNum) > 0 {
+		tokenTTLInt, _ := strconv.Atoi(tokenTTL)
+		if tokenTTLInt <= 0 {
+			tokenTTLInt = 60
+		}
+		if (now-expNum) <= int64(tokenTTLInt) && (now-expNum) > 0 {
 			//TODO modify the durarions
 			newToken, err := j.Create(claims["dat"])
 			if err != nil {
@@ -210,6 +219,6 @@ func (j *JWT) RefreshToken(tokenStr string) (string, error) {
 	case err2 != nil && !strings.Contains(err2.Error(), "Token is expired"):
 		return "", err2
 	}
-
+	fmt.Println("Token still valid needs to wait for expiration")
 	return tokenStr, nil
 }
