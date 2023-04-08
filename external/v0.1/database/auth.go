@@ -51,6 +51,7 @@ func LoginAccount(user *User) (*User, error) {
 	if info != nil {
 		user.UserInfo = *info
 	}
+	user.Password = ""
 	return user, nil
 
 }
