@@ -97,7 +97,7 @@ func validate(c *gin.Context) {
 
 // publickKey: handler tha will give the public key for external app validation
 func publicKey(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"publicKey": J.PublicKey})
+	c.JSON(http.StatusOK, gin.H{"publicKey": J.PublicPemStr})
 }
 
 // logout: will logout the session
