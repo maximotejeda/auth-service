@@ -3,11 +3,11 @@ module github.com/maximotejeda/auth-service
 go 1.20
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.7.7
 	golang.org/x/crypto v0.7.0
 	gorm.io/driver/sqlite v1.4.4
 	gorm.io/gorm v1.24.6
+	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2
 )
 
 require (
@@ -32,5 +32,4 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/client-go v0.26.3 // indirect
 )
