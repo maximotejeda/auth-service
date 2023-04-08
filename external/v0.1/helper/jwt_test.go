@@ -40,11 +40,7 @@ func TestJWTCreate(t *testing.T) {
 			if err != nil {
 				t.Errorf("error validating token: %v", token)
 			}
-			v2, ok := values.(map[string]interface{})
-			if !ok {
-				t.Errorf("error asserting the tipe of payload: %v, %v", v2, values)
-			}
-			for k, value := range v2 {
+			for k, value := range values {
 				if value != v[k] {
 					t.Errorf("Values are different Want %s got %s.", v[k], value)
 				}
