@@ -9,6 +9,7 @@ func main() {
 
 	r.AuthAddRoutes(router)
 	r.UserAddRoutes(router)
+	r.AdminAddRoutes(router)
 
 	r.R.Run(":8083")
 }
