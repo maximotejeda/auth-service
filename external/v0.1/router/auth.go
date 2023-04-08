@@ -55,14 +55,17 @@ func login(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "account not active check your email for activation, or ask for an activation emails"})
 		return
 	}
-	toClaims := database.User{}
-	toClaims.Username = userLoged.Username
-	toClaims.Email = userLoged.Email
-	toClaims.ID = userLoged.ID
-	toClaims.UserInfo.FirstName = user.UserInfo.FirstName
-	toClaims.UserInfo.LastName = user.UserInfo.LastName
+	claims := map[string]interface{}{
+		"username": userLoged.Username,
+		"email":    userLoged.Email,
+		//	"id":        userLoged.ID,
+		//	"firstname": userLoged.UserInfo.FirstName,
+		//	"lastname":  userLoged.UserInfo.LastName,
+		"rol":   userLoged.Rol,
+		"loged": userLoged.UserInfo.Loged,
+	}
 
-	s, err := j.Create(toClaims)
+	s, err := j.Create(claims)
 
 	if err != nil {
 		log.Print("Create token: ", err.Error())
@@ -201,13 +204,8 @@ func finishRecover(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	val, ok := params.(map[string]interface{})
-	if !ok {
-		fmt.Printf("%v", params)
-		c.JSON(http.StatusUnauthorized, gin.H{"error getting claims": val})
-		return
-	}
-	username, ok := val["username"]
+
+	username, ok := params["username"]
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "username not in claims"})
 		return
@@ -248,16 +246,11 @@ func activateAccount(c *gin.Context) {
 	sToken := token[7:]
 	params, err := J.Validate(sToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	val, ok := params.(map[string]interface{})
-	if !ok {
-		fmt.Printf("%v", params)
-		c.JSON(http.StatusUnauthorized, gin.H{"error getting claims": val})
-		return
-	}
-	username, ok := val["username"]
+
+	username, ok := params["username"]
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "username not in claims"})
 		return
