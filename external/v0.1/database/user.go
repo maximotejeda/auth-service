@@ -48,7 +48,6 @@ type RecoverAccount struct {
 
 // getUser will have 2 ways to get record email and username
 func getUser(user *User) (*User, error) {
-	//TODO get an user
 	var newUser *User
 
 	if user.UserLogin.Username != "" {
