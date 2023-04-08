@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -94,7 +95,12 @@ func NewRecoverAccount(data string) {
 	}
 	recover.UserID = user.ID
 	fmt.Println("Recovering ID: ", user.ID)
-	editRecoverAccount(&recover)
+	// think about rigger the email from here or from the handler
+	_, err = editRecoverAccount(&recover)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
 
 func EndRecoverAccount(id uint) {
@@ -114,4 +120,28 @@ func GetRecoverInfo(id uint) (*RecoverAccount, error) {
 func ActivateAccount(user *User) (*User, error) {
 	user, err := switchAccount(user)
 	return user, err
+}
+
+// Admin Functions with special priviledges
+func AdminGetUsers() ([]User, error) {
+	users, err := getUsers()
+	return users, err
+}
+
+func AdminBanUser(userStr string) error {
+	if userStr == "" {
+		return errors.New("user cant be empty email or username needed")
+	}
+	user := &User{}
+	if strings.Contains(userStr, "@") {
+		user.Email = userStr
+	} else {
+		user.Username = userStr
+	}
+	user, err := switchAccount(user)
+	if err != nil {
+		fmt.Println("error adminBAnUser: ", err)
+		return err
+	}
+	return err
 }
