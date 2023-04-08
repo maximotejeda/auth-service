@@ -11,12 +11,12 @@ DEBUG=1
 image:
 	docker build -t auth-service:latest --build-arg OS=$(OS) --build-arg ARCH=$(ARCH)  .
 run-image: image
-	@docker run -p 4000:4000 -p 8083:8083 -v ./db:/db auth-service:latest
+	@docker run -p 4000:4000 -p 8083:8083 -v ./db:/db -v ./keys:/keys auth-service:latest
 
 image-debug:
 	docker build -f ./Dockerfile-debug -t auth-service:debug --build-arg OS=$(OS) --build-arg ARCH=$(ARCH)  .
 run-debug: image-debug
-	@docker run -p 4000:4000 -p 8083:8083 --env-file .env ./db:/db auth-service:debug
+	@docker run -p 4000:4000 -p 8083:8083 --env-file .env -v ./db:/db -v ./keys:/keys auth-service:debug
 
 run-local:build
 	@./bin/auth-$(OS)-$(ARCH)
