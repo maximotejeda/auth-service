@@ -17,14 +17,25 @@ func Validated() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		s := strings.Replace(token, "Bearer ", "", 1)
-		_, err := GlobalKeys.Validate(s)
+		claims, err := GlobalKeys.Validate(s)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"err": err.Error()})
 			c.Abort()
 			return
 		} else {
-			c.Next()
+
+			// add information to request to reduce information decrypt from JWT
+			username, _ := claims["username"].(string)
+			email, _ := claims["email"].(string)
+			rol, _ := claims["rol"].(string)
+			loged, _ := claims["loged"].(string)
+			c.Set("username", username)
+			c.Set("email", email)
+			c.Set("rol", rol)
+			c.Set("loged", loged)
 		}
+		c.Next()
+
 	}
 }
 
