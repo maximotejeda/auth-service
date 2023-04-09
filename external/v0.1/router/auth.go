@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maximotejeda/auth-service/external/v0.1/database"
 	"github.com/maximotejeda/auth-service/external/v0.1/helper"
+	"github.com/maximotejeda/auth-service/external/v0.1/mail"
 )
 
 // AuthAddRoutes: add the different  routes to router differentiating from validated or not
@@ -92,6 +93,7 @@ func validate(c *gin.Context) {
 		return
 	}
 	c.Writer.Header().Set("Authorization", "Bearer "+token)
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
@@ -153,6 +155,8 @@ func register(c *gin.Context) {
 		return
 	}
 	c.Writer.Header().Set("Authorization", "Bearer "+token)
+	host := c.Request.Host
+	mail.SendEmail(user.Email, token, "activate", "0", host)
 	// the above code is innecessary can be deleted just for testing purpose
 	c.JSON(http.StatusCreated, gin.H{"status": "created"})
 }
@@ -175,12 +179,21 @@ func newRecover(c *gin.Context) {
 	}
 	res := database.AccountExist(input.Data)
 	fmt.Println("Result of look up user is: ", res)
-	database.NewRecoverAccount(input.Data)
+	user := database.NewRecoverAccount(input.Data)
 	//TODO logic to send email will be available for token live
 	// the email will redirect to a page with a token issued in the url querys
 	// if the token and the pin are ok
 	// be able to change password in the token live
+	if user != nil {
+		token, err := J.Create(user)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		host := c.Request.Host
+		mail.SendEmail(user.Email, token, "recover", user.RecoverAccount.RecoverCode, host)
 
+	}
 	c.JSON(http.StatusCreated, gin.H{"status": "if data exist an email will be sent in the next 10 minutes"})
 }
 

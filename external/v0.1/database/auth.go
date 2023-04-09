@@ -81,7 +81,7 @@ func AccountExist(data string) bool {
 	return err == nil
 }
 
-func NewRecoverAccount(data string) {
+func NewRecoverAccount(data string) *User {
 	user := &User{}
 	recover := RecoverAccount{}
 	if strings.Contains(data, "@") {
@@ -92,6 +92,7 @@ func NewRecoverAccount(data string) {
 	user, err := getUser(user)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	recover.UserID = user.ID
 	fmt.Println("Recovering ID: ", user.ID)
@@ -99,7 +100,11 @@ func NewRecoverAccount(data string) {
 	_, err = editRecoverAccount(&recover)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
+	recovery, _ := getRecoverAccount(user.ID)
+	user.RecoverAccount = *recovery
+	return user
 
 }
 
