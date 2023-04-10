@@ -13,33 +13,17 @@ var (
 	username = os.Getenv("ADMINUSERDB")
 	password = os.Getenv("ADMINPASSDB")
 	email    = os.Getenv("ADMINEMAILDB")
+	addAdmin = os.Getenv("ADDADMINUSER")
 )
 
 func init() {
 	DB = NewDB()
 	DB.AutoMigrate(&User{}, &UserInfo{}, &RecoverAccount{})
 	// Create admin user on first run of database
-	if username != "" && password != "" && email != "" {
-		passwd, _ := hashPassword(password)
-		DB.Create(&User{
-			Active: true,
-			Rol:    "admin",
-			UserLogin: UserLogin{
-				Username: username,
-				Password: passwd,
-				Email:    email,
-			},
-			RecoverAccount: RecoverAccount{
-				RecoverCount: 0,
-				Type:         "email",
-				Recover:      0,
-			},
-			UserInfo: UserInfo{
-				FirstName: "admin",
-				LastName:  "admin",
-			},
-		})
+	if addAdmin != "" {
+		addAdminUser()
 	}
+
 }
 
 // Connection to sqlite
@@ -62,4 +46,28 @@ func createConnSTR() string {
 		fmt.Printf("%v", err)
 	}
 	return fmt.Sprintf("%s/%s?mode=%s&cache=%s", dbPath, dbName, mode, cache)
+}
+
+func addAdminUser() {
+	if username != "" && password != "" && email != "" {
+		passwd, _ := hashPassword(password)
+		DB.Create(&User{
+			Active: true,
+			Rol:    "admin",
+			UserLogin: UserLogin{
+				Username: username,
+				Password: passwd,
+				Email:    email,
+			},
+			RecoverAccount: RecoverAccount{
+				RecoverCount: 0,
+				Type:         "email",
+				Recover:      0,
+			},
+			UserInfo: UserInfo{
+				FirstName: "admin",
+				LastName:  "admin",
+			},
+		})
+	}
 }
