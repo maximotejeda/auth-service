@@ -9,6 +9,8 @@ import (
 var (
 	senderEmail = os.Getenv("AUTHEMAILUSERNAME")
 	pwd         = os.Getenv("AUTHEMAILPWD")
+	smtpServer  = os.Getenv("SMTPSERVER")
+	smtpPort    = os.Getenv("SMTPPORT")
 )
 
 func SendEmail(mail, token, kind, code, host string) {
@@ -30,7 +32,7 @@ func SendEmail(mail, token, kind, code, host string) {
 	msg = formatEmail(toBody, subject, body)
 	//msg := []byte("To: maximotejeda.com\r\n" + "Subject: Testing the send\r\n" + "\r\n" + "sended or what??" + message + "\r\n")
 	//newMsg := formatEmail("To: maximotejeda.com\r\n", "Subject: Testing the send\r\n")
-	err := smtp.SendMail("smtp.gmail.com:587", auth, senderEmail, to, msg)
+	err := smtp.SendMail(smtpServer+":"+smtpPort, auth, senderEmail, to, msg)
 	if err != nil {
 		panic(err)
 	}
