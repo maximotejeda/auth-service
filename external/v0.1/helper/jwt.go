@@ -63,7 +63,7 @@ func (j *JWT) New() {
 	}
 }
 
-// rotate the keys creating new keys in case of existence
+// Renew rotate the keys creating new keys in case of existence
 func (j *JWT) Renew() {
 	priv, pub := MyGenerateKeys()
 	j.privateKey = priv
@@ -75,7 +75,7 @@ func (j *JWT) Renew() {
 	//fmt.Printf("\nPrivatekeyPem: %s\n\n PublicKeyPem: %s", j.privatePemStr, j.publicPemStr)
 }
 
-// every time new keys are issued write them to disk overwriting the actuals
+// writeToDisk every time new keys are issued write them to disk overwriting the actuals
 func (j *JWT) writeToDisk() {
 	err := os.Mkdir("keys", 0770)
 	if err != nil {
