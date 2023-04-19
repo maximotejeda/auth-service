@@ -7,6 +7,7 @@ import (
 	"github.com/maximotejeda/auth-service/external/v0.1/helper"
 )
 
+// UserAddRoutes Add routes to the endpoint hardcoded
 func UserAddRoutes(r *gin.Engine) {
 	v01 := r.Group("/v0.1")
 	user := v01.Group("/user")

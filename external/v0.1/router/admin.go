@@ -9,6 +9,7 @@ import (
 	"github.com/maximotejeda/auth-service/external/v0.1/helper"
 )
 
+// AdminAddRoutes Add routes to predefined endpoints
 func AdminAddRoutes(r *gin.Engine) {
 	v01 := r.Group("/v0.1")
 	admin := v01.Group("/admin")
