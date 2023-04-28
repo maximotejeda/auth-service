@@ -9,11 +9,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// hashPassword
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
+// comparePasswd
 func comparePasswd(password string, hash string) bool {
 	//TODO compare 2 passwords
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
@@ -23,6 +25,7 @@ func comparePasswd(password string, hash string) bool {
 	return err == nil
 }
 
+// LoginAccount
 func LoginAccount(user *User) (*User, error) {
 	//TODO login account
 	newUser := User{}
@@ -57,6 +60,7 @@ func LoginAccount(user *User) (*User, error) {
 
 }
 
+// CreateAccount
 func CreateAccount(user *User) error {
 	if user.Email == "" {
 		return fmt.Errorf("user creation must have an email")
@@ -69,6 +73,7 @@ func CreateAccount(user *User) error {
 	return err
 }
 
+// AccountExist
 func AccountExist(data string) bool {
 	user := User{}
 	if strings.Contains(data, "@") {
@@ -81,6 +86,7 @@ func AccountExist(data string) bool {
 	return err == nil
 }
 
+// NewRecoverAccount
 func NewRecoverAccount(data string) *User {
 	user := &User{}
 	recover := RecoverAccount{}
@@ -108,6 +114,7 @@ func NewRecoverAccount(data string) *User {
 
 }
 
+// EndRecoverAccount
 func EndRecoverAccount(id uint) {
 	if id == 0 {
 		fmt.Println(fmt.Errorf("id of userid on recovery cnat be: %d", id))
@@ -117,11 +124,13 @@ func EndRecoverAccount(id uint) {
 	cancelRecoverAccount(&recovery)
 }
 
+// GetRecoverInfo
 func GetRecoverInfo(id uint) (*RecoverAccount, error) {
 	recover, error := getRecoverAccount(id)
 	return recover, error
 }
 
+// ActivateAccount
 func ActivateAccount(user *User) (*User, error) {
 	user, err := switchAccount(user)
 	return user, err
@@ -133,6 +142,7 @@ func AdminGetUsers() ([]User, error) {
 	return users, err
 }
 
+// AdminBanUser
 func AdminBanUser(userStr string) error {
 	if userStr == "" {
 		return errors.New("user cant be empty email or username needed")

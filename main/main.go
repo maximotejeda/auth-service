@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	r "github.com/maximotejeda/auth-service/external/v0.1/router"
+	r "github.com/maximotejeda/auth-service/external/v0.0.1/router"
 )
 
 var (
 	port = os.Getenv("SERVERPORT")
-	addr = os.Getenv("SERVERADDr")
+	addr = os.Getenv("SERVERADDR")
 )
 
 func main() {
