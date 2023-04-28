@@ -8,14 +8,16 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/maximotejeda/auth-service/external/v0.1/database"
-	"github.com/maximotejeda/auth-service/external/v0.1/helper"
-	"github.com/maximotejeda/auth-service/external/v0.1/mail"
+	"github.com/maximotejeda/auth-service/external/v0.0.1/database"
+	"github.com/maximotejeda/auth-service/external/v0.0.1/mail"
+	"github.com/maximotejeda/helpers/middlewares"
 )
+
+var version string = os.Getenv("VERSION") // set on env
 
 // AuthAddRoutes: add the different  routes to router differentiating from validated or not
 func AuthAddRoutes(r *gin.Engine) {
-	v01 := r.Group("/v0.1")
+	v01 := r.Group(version)
 	auth := v01.Group("/auth")
 	{
 		auth.POST("/login", login)
@@ -26,7 +28,7 @@ func AuthAddRoutes(r *gin.Engine) {
 		auth.PUT("/endrecover", finishRecover)
 		auth.GET("/activate", activateAccount)
 	}
-	validated := auth.Group("/").Use(helper.Validated())
+	validated := auth.Group("/").Use(middlewares.Validated(J))
 	{
 		validated.GET("/logout", logout)
 		validated.GET("/pubkey", publicKey)
@@ -86,6 +88,10 @@ func login(c *gin.Context) {
 // validate: handler that will validate if a token is valid
 func validate(c *gin.Context) {
 	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "url param token needed"})
+		return
+	}
 	s := token[7:]
 	_, err := J.Validate(s)
 	if err != nil {
@@ -100,6 +106,7 @@ func validate(c *gin.Context) {
 // publickKey: handler tha will give the public key for external app validation
 func publicKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"publicKey": J.PublicPemStr})
+
 }
 
 // logout: will logout the session
@@ -124,6 +131,7 @@ func refresh(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.Writer.Header().Set("Authorization", "Bearer "+newToken)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

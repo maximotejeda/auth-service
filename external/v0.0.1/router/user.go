@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/maximotejeda/auth-service/external/v0.1/helper"
+	"github.com/maximotejeda/helpers/middlewares"
 )
 
 // UserAddRoutes Add routes to the endpoint hardcoded
 func UserAddRoutes(r *gin.Engine) {
-	v01 := r.Group("/v0.1")
+	v01 := r.Group(version)
 	user := v01.Group("/user")
-	user.Use(helper.Validated())
+	user.Use(middlewares.Validated(J))
 	{
 		user.GET("/info", userInfo)
 		user.GET("/interaction", userInteractions)

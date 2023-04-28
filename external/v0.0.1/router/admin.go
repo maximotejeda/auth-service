@@ -5,17 +5,17 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/maximotejeda/auth-service/external/v0.1/database"
-	"github.com/maximotejeda/auth-service/external/v0.1/helper"
+	db "github.com/maximotejeda/auth-service/external/v0.0.1/database"
+	"github.com/maximotejeda/helpers/middlewares"
 )
 
 // AdminAddRoutes Add routes to predefined endpoints
 func AdminAddRoutes(r *gin.Engine) {
-	v01 := r.Group("/v0.1")
+	v01 := r.Group(version)
 	admin := v01.Group("/admin")
 	validated := admin.Group("/")
-	validated.Use(helper.Validated())
-	validated.Use(helper.IsAdmin())
+	validated.Use(middlewares.Validated(J))
+	validated.Use(middlewares.IsAdmin(J))
 	{
 		validated.GET("/users", adminListUsers)
 		validated.GET("/recover", adminInitiateUserRecovery)
