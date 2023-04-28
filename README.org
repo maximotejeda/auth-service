@@ -1,0 +1,29 @@
+#+AUTHOR: Maximo Tejeda
+#+EMAIL:  Maximotejeda@gmail.com
+
+* Auth-Service
+An authentication service from scratch in *Go*, designed to be used on my personal projects
+on my homelab in *k8s*, the main goal of the service is to serve as a place where i can
+authenticate users and manage sessions.
+
+** JWT
+Use Json Web Token as a way to manage user authentication, the tokens are signed with RSA 4096
+and the public key is available for the other services that may need to validate the tokens, the
+service  was developed to be behind a pod on k8s and not accesible to the world. I have other project
+called entrance that its main purpose is to serve as a reverse proxy for this one.
+
+** Functions
+1. Login
+2. Logout
+3. Refresh
+4. Validate
+5. Trigger keys rotation
+6. Email
+   1. For activate account
+   2. For recover account
+7. Admin users
+   1. Create
+   2. Update
+   3. Ban
+** TODO
+Env Variables Required for project to run
