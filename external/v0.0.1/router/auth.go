@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximotejeda/auth-service/external/v0.0.1/database"
-	mail "github.com/maximotejeda/helpers/mail"
+	mail "github.com/maximotejeda/helpers/mails"
 	"github.com/maximotejeda/helpers/middlewares"
 )
 
