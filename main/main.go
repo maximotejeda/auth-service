@@ -53,7 +53,6 @@ func main() {
 		}
 	}()
 
-	//go r.R.Run(addr + ":" + port)
 	for {
 		select {
 		case <-ch:
@@ -63,7 +62,7 @@ func main() {
 			ch <- nats.NewMsg("renew")
 		case <-quit:
 			log.Print("Shutting Down server")
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 			defer cancel()
 			if err := srv.Shutdown(ctx); err != nil {
 				log.Fatal("Server Shutdown:", err)
